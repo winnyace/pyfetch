@@ -48,14 +48,14 @@ def get_memory(r):
         mem_total = file.readline().strip("MemTotal:\t").lstrip().rstrip().strip("kB")
         file.readline()
         mem_avail = file.readline().strip("MemAvailable:\t").lstrip().rstrip().strip("kB")
-    mem_used = int(mem_total)//1024 - int(mem_avail)//1024
-    final = "Memory:\t" + str(mem_used) + "M / " + str(int(mem_total)//1024) + "M"
+    mem_used = int(mem_total) // 1024 - int(mem_avail) // 1024
+    final = "Memory:\t" + str(mem_used) + "M / " + str(int(mem_total) // 1024) + "M"
     r.append(final)
 
 
 def get_cpu(r):
     with (open("/proc/cpuinfo", "r") as file):
-        for i in range(4):
+        for _ in range(4):
             file.readline()
         unformat_cpu = re.search(": ", file.readline())
         cpu = unformat_cpu.string.strip("model name:\t").rstrip()
@@ -73,24 +73,35 @@ def get_mobo_info(r):
 
 
 def get_gpu(r):
-    newout = str()
-    command = (subprocess.run(["glxinfo", "-B"], stdout=subprocess.PIPE)
-               .stdout.decode("UTF-8")
-               .strip())
-    out = command.split("Device: ")[1].split("(")[0]
+    cmdp1 = subprocess.Popen(["lspci"], stdout=subprocess.PIPE)
+    cmdp2 = subprocess.Popen(["grep", "VGA"], stdin=cmdp1.stdout, stdout=subprocess.PIPE)
+    cmdout, cmderr = cmdp2.communicate()
+    out = cmdout.decode("utf-8")
+    out = out.split('\n')
+    out.pop()
 
-    nvidia_check = subprocess.run(["nvidia-smi"], stdout=subprocess.PIPE)
-    if nvidia_check.returncode == 0:
-        command = (subprocess.run(["prime-run", "glxinfo", "-B"], stdout=subprocess.PIPE)
-                   .stdout.decode("UTF-8")
-                   .strip())
-        newout = command.split("OpenGL renderer string: ")[1].split("\n")[0]
-        out = out + "/ "
+    final_temp = []
+    for s in out:
+        gpu = str()
+        manu = str()
+        if re.findall("AMD/ATI", s):
+            manu = re.findall("AMD/ATI", s)[0] + " "
+        if re.findall("NVIDIA", s):
+            manu = re.findall("NVIDIA", s)[0] + " "
+        if re.findall("Intel", s):
+            manu = re.findall("Intel", s)[0] + " "
 
+        model = re.findall(r'\[.*?]', s)
+        for j in model:
+            temp = j.strip("[]")
+            if temp != "AMD/ATI":
+                gpu = gpu + manu + temp
+            final_temp.append(gpu)
 
-    final = "GPU:\t" + out + newout
+    final_temp = list(filter(lambda x: x != '', final_temp))
+    final = final_temp[0] + "; " + final_temp[1]
+    final = "GPU(s):\t" + final
     r.append(final)
-
 
 
 if __name__ == "__main__":
