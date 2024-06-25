@@ -4,8 +4,12 @@ import termcolor
 
 
 def get_user(r):
-    username = subprocess.run(["whoami"], stdout=subprocess.PIPE).stdout.decode("utf-8").rstrip()
-    hostname = subprocess.run(["hostname"], stdout=subprocess.PIPE).stdout.decode('utf-8').rstrip()
+    username = (subprocess.run(["whoami"], stdout=subprocess.PIPE)
+                .stdout.decode("utf-8")
+                .rstrip())
+    hostname = (subprocess.run(["hostname"], stdout=subprocess.PIPE)
+                .stdout.decode('utf-8')
+                .rstrip())
     unformat = username + str("@") + hostname
     final = termcolor.colored(unformat, attrs=['bold'])
     r.append(final)
@@ -18,24 +22,29 @@ def get_distro(r):
                 temp = line[line.find("\""):]
                 temp = temp.replace('"', '')
                 temp = temp.rstrip()
-    unformat = "OS:\t\t" + temp
+    unformat = "OS:\t" + temp
     r.append(unformat)
 
 
 def get_kernel(r):
-    command = subprocess.run(["uname", "-rm"], stdout=subprocess.PIPE).stdout.decode("utf-8").rstrip()
+    command = (subprocess.run(["uname", "-rm"], stdout=subprocess.PIPE)
+               .stdout.decode("utf-8")
+               .rstrip())
     final = "Kernel:\t" + command
     r.append(final)
 
 
 def get_uptime(r):
-    command = subprocess.run(["uptime", "-p"], stdout=subprocess.PIPE).stdout.decode("utf-8").strip("up ").rstrip()
+    command = (subprocess.run(["uptime", "-p"], stdout=subprocess.PIPE)
+               .stdout.decode("utf-8")
+               .strip("up ")
+               .rstrip())
     final = "Uptime:\t" + command
     r.append(final)
 
 
 def get_memory(r):
-    with open("/proc/meminfo", "r") as file:
+    with (open("/proc/meminfo", "r")) as file:
         mem_total = file.readline().strip("MemTotal:\t").lstrip().rstrip().strip("kB")
         file.readline()
         mem_avail = file.readline().strip("MemAvailable:\t").lstrip().rstrip().strip("kB")
@@ -64,10 +73,22 @@ def get_mobo_info(r):
 
 
 def get_gpu(r):
-    command =  subprocess.run(["glxinfo", "-B"], stdout=subprocess.PIPE).stdout.decode("UTF-8").strip()
+    newout = str()
+    command = (subprocess.run(["glxinfo", "-B"], stdout=subprocess.PIPE)
+               .stdout.decode("UTF-8")
+               .strip())
     out = command.split("Device: ")[1].split("(")[0]
 
-    final = "GPU:\t" + out
+    nvidia_check = subprocess.run(["nvidia-smi"], stdout=subprocess.PIPE)
+    if nvidia_check.returncode == 0:
+        command = (subprocess.run(["prime-run", "glxinfo", "-B"], stdout=subprocess.PIPE)
+                   .stdout.decode("UTF-8")
+                   .strip())
+        newout = command.split("OpenGL renderer string: ")[1].split("\n")[0]
+        out = out + "/ "
+
+
+    final = "GPU:\t" + out + newout
     r.append(final)
 
 
