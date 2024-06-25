@@ -18,7 +18,7 @@ def get_distro(r):
                 temp = line[line.find("\""):]
                 temp = temp.replace('"', '')
                 temp = temp.rstrip()
-    unformat = "OS:\t" + temp
+    unformat = "OS:\t\t" + temp
     r.append(unformat)
 
 
@@ -45,7 +45,7 @@ def get_memory(r):
 
 
 def get_cpu(r):
-    with open("/proc/cpuinfo", "r") as file:
+    with (open("/proc/cpuinfo", "r") as file):
         for i in range(4):
             file.readline()
         unformat_cpu = re.search(": ", file.readline())
@@ -63,15 +63,27 @@ def get_mobo_info(r):
     r.append(final)
 
 
-if __name__ == "__main__":
-    info = []
+def get_gpu(r):
+    command =  subprocess.run(["glxinfo", "-B"], stdout=subprocess.PIPE).stdout.decode("UTF-8").strip()
+    out = command.split("Device: ")[1].split("(")[0]
 
-    get_user(info)
-    get_distro(info)
-    get_mobo_info(info)
-    get_cpu(info)
-    get_memory(info)
-    get_kernel(info)
-    get_uptime(info)
-    for s in info:
-        print(s)
+    final = "GPU:\t" + out
+    r.append(final)
+
+
+
+if __name__ == "__main__":
+    result_list = []
+
+    get_user(result_list)
+    get_distro(result_list)
+    get_kernel(result_list)
+    get_uptime(result_list)
+    result_list.append(" ")
+    get_mobo_info(result_list)
+    get_cpu(result_list)
+    get_gpu(result_list)
+    get_memory(result_list)
+
+    for i in result_list:
+        print(i)
