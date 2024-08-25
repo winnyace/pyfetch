@@ -35,13 +35,18 @@ def get_kernel(r):
 
 
 def get_uptime(r):
-    command = (subprocess.run(["uptime", "-p"], stdout=subprocess.PIPE)
-               .stdout.decode("utf-8")
-               .strip("up ")
-               .rstrip())
-    final = "Uptime:\t" + command
+    res = {}
+    with open('/proc/uptime', 'r') as file:
+        time = re.split(" ", file.read())
+        time = float(time[0])
+        res['days'] = time//86400
+        res['hours'] = time//3600
+        res['minutes'] = time%3600//60
+    final = "Uptime:\t"
+    for x in res:
+        if res[x] != 0:
+            final = final + str(int(res[x])) + " " + str(x) + " "
     r.append(final)
-
 
 def get_memory(r):
     with (open("/proc/meminfo", "r")) as file:
